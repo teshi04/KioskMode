@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -17,11 +15,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-    }
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
         lock();
     }
 
@@ -32,6 +25,7 @@ public class MainActivity extends Activity {
 
         if (manager.isDeviceOwnerApp(getPackageName())) {
             manager.setLockTaskPackages(componentName, new String[]{getPackageName()});
+            startLockTask();
         }
     }
 
@@ -51,7 +45,7 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_stop_lock_task) {
-            startLockTask();
+            stopLockTask();
             return true;
         }
 
