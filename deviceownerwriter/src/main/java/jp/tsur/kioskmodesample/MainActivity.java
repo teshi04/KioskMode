@@ -21,11 +21,36 @@ import java.util.Properties;
 
 public class MainActivity extends Activity {
 
+    private static final String PACKAGE_NAME = "jp.tsur.kioskmodesample";
+    private static final String PACKAGE_DOWNLOAD_LOCATION = "http://tsur.jp/deviceowner-debug.apk";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        String checksum = calcChecksum();
+
+        try {
+            Properties p = new Properties();
+            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME, PACKAGE_NAME);
+            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION, PACKAGE_DOWNLOAD_LOCATION);
+            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM, checksum);
+
+            StringWriter stringWriter = new StringWriter();
+            p.store(stringWriter, "");
+
+            NfcAdapter defaultAdapter = NfcAdapter.getDefaultAdapter(this);
+
+            NdefMessage msg = new NdefMessage(NdefRecord.createMime(DevicePolicyManager.MIME_TYPE_PROVISIONING_NFC, stringWriter.toString().getBytes("UTF-8")));
+            defaultAdapter.setNdefPushMessage(msg, this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private String calcChecksum() {
         MessageDigest digest = null;
         try {
             digest = MessageDigest.getInstance("SHA-1");
@@ -41,23 +66,7 @@ public class MainActivity extends Activity {
         }
 
         digest.update(apkBytes);
-
-        NfcAdapter defaultAdapter = NfcAdapter.getDefaultAdapter(this);
-        try {
-            Properties p = new Properties();
-            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME, "jp.tsur.kioskmodesample");
-            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION, "https://www.dropbox.com/s/6lhrmhqdnyk9ixx/deviceowner-debug.apk?dl=0");
-            p.setProperty(DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM, Base64.encodeToString(digest.digest(), Base64.URL_SAFE));
-
-            StringWriter stringWriter = new StringWriter();
-            p.store(stringWriter, "");
-
-            NdefMessage msg = new NdefMessage(NdefRecord.createMime(DevicePolicyManager.MIME_TYPE_PROVISIONING_NFC, stringWriter.toString().getBytes("UTF-8")));
-            defaultAdapter.setNdefPushMessage(msg, this);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
+        return Base64.encodeToString(digest.digest(), Base64.URL_SAFE);
     }
 
     @Override
